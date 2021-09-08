@@ -28,9 +28,9 @@
                 </template>
 
                 <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
-                <Column field="vehiclemodel" header="Vehicle Model" :sortable="true" style="min-width:16rem"></Column>
-                <Column field="plateno" header="Plate No" :sortable="true" style="min-width:16rem"></Column>
-                <Column field="vehicletonnage" header="Vehicle Tonnage" :sortable="true" style="min-width:10rem">>
+                <Column field="model" header="Vehicle Model" :sortable="true" style="min-width:16rem"></Column>
+                <Column field="platNumber" header="Plate No" :sortable="true" style="min-width:16rem"></Column>
+                <Column field="tonnage" header="Vehicle Tonnage" :sortable="true" style="min-width:10rem">>
                  style="min-width:16rem">>
                
                 
@@ -53,19 +53,19 @@
                    
 
             <div class="vehiclemodel-field">
-                <label for="vehiclemode">Vehicle Model</label>
-                <InputText id="vehiclemode" v-model.trim="product.vehiclemode" required="true" autofocus :class="{'p-invalid': submitted && !product.vehiclemode}" />
-                <small class="p-error" v-if="submitted && !product.vehiclemode">Vehicle Model is required.</small>
+                <label for="model">Vehicle Model</label>
+                <InputText id="model" v-model.trim="product.model" required="true" autofocus :class="{'p-invalid': submitted && !product.model}" />
+                <small class="p-error" v-if="submitted && !product.model">Vehicle Model is required.</small>
             </div>
             <div class="plateno-field">
                 <label for="plateno">Plate No</label>
-                <InputText id="plateno" v-model.trim="product.plateno" required="true" autofocus :class="{'p-invalid': submitted && !product.plateno}" />
-                <small class="p-error" v-if="submitted && !product.plateno">Plate No is required.</small>
+                <InputText id="plateno" v-model.trim="product.platNumber" required="true" autofocus :class="{'p-invalid': submitted && !product.platNumber}" />
+                <small class="p-error" v-if="submitted && !product.platNumber">Plate No is required.</small>
             </div>
             <div class="vehicletonnage-field">
-                <label for="vehicletonnage.">Vehicle Tonnage</label>
-                <InputText id="vehicletonnage" v-model.trim="product.vehicletonnage" required="true" autofocus :class="{'p-invalid': submitted && !product.vehicletonnage}" />
-                <small class="p-error" v-if="submitted && !product.vehicletonnage">Vehicle Tonnage is required.</small>
+                <label for="vehicletonnage.">Vehicle Tonnage in KG</label>
+                <InputText id="vehicletonnage" v-model.trim="product.tonnage" required="true" autofocus :class="{'p-invalid': submitted && !product.tonnage}" />
+                <small class="p-error" v-if="submitted && !product.tonnage">Vehicle Tonnage is required.</small>
             </div>
            
             <template #footer>
@@ -77,7 +77,7 @@
         <Dialog v-model:visible="deleteProductDialog" :style="{width: '450px'}" header="Confirm" :modal="true">
             <div class="confirmation-content">
                 <i class="pi pi-exclamation-triangle p-mr-3" style="font-size: 2rem" />
-                <span v-if="product">Are you sure you want to delete <b>{{product.name}}</b>?</span>
+                <span v-if="product">Are you sure you want to delete <b>{{product.platNumber}}</b>?</span>
             </div>
             <template #footer>
                 <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteProductDialog = false"/>
@@ -101,12 +101,12 @@
 <script>
 import { ref, onMounted } from 'vue';
 
-import {getCustomers} from '../service/ProductService';
+import {getVehicles, postVehicle, amendVehicle, destroyVehicle} from '../service/ProductService';
 
 export default {
     setup() {
         onMounted(() => {
-            getCustomers().then(data => products.value = data);
+            initialize()
         })
 
         const toast = <Toast/>
@@ -116,6 +116,7 @@ export default {
         const deleteProductDialog = ref(false);
         const deleteProductsDialog = ref(false);
         const product = ref({});
+        const index = ref();
         const selectedProducts = ref();
         const filters = ref({});
         const submitted = ref(false);
@@ -130,6 +131,9 @@ export default {
 				return value.toLocaleString('en-US', {style: 'currency', currency: 'USD'});
 			return;
         };
+        const initialize =()=> {
+             getVehicles().then(data => products.value = data.vehicles)
+        }
         const openNew = () => {
             product.value = {};
             submitted.value = false;
@@ -141,39 +145,49 @@ export default {
         };
         const saveProduct = () => {
             submitted.value = true;
-
-			// if (product.value.name.trim()) {
-            //     if (product.value.id) {
-            //         product.value.inventoryStatus = product.value.inventoryStatus.value ? product.value.inventoryStatus.value : product.value.inventoryStatus;
-            //         products.value[findIndexById(product.value.id)] = product.value;
-            //         toast.add({severity:'success', summary: 'Successful', detail: 'Product Updated', life: 3000});
-            //     }
-            //     else {
-            //         product.value.id = createId();
-            //         product.value.code = createId();
-            //         product.value.image = 'product-placeholder.svg';
-            //         product.value.inventoryStatus = product.value.inventoryStatus ? product.value.inventoryStatus.value : 'LABOURER';
-            //         products.value.push(product.value);
-            //         toast.add({severity:'success', summary: 'Successful', detail: 'Product Created', life: 3000});
-            //     }
-
-            //     productDialog.value = false;
-            //     product.value = {};
-            // }
+        const {id, model, platNumber, tonnage} = product.value
+        console.log(id,'id')
+                if (product.value.id) {
+                    amendVehicle({id, model, platNumber, tonnage}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+                
+            }else {
+                postVehicle({model, platNumber, tonnage}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+            }
         };
         const editProduct = (prod) => {
             product.value = {...prod};
             productDialog.value = true;
         };
         const confirmDeleteProduct = (prod) => {
-            product.value = prod;
+            const {id} = prod;
+            index.value = id ;
             deleteProductDialog.value = true;
         };
         const deleteProduct = () => {
-            products.value = products.value.filter(val => val.id !== product.value.id);
+           destroyVehicle(index.value).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
             deleteProductDialog.value = false;
             product.value = {};
-            toast.add({severity:'success', summary: 'Successful', detail: 'Product Deleted', life: 3000});
         };
         const findIndexById = (id) => {
             let index = -1;

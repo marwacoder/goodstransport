@@ -1,5 +1,6 @@
 <template>
     <div>
+    
         <div class="card p-mt-5 p-m">
             <Toolbar class="p-mb-4">
                 <template #left>
@@ -28,14 +29,10 @@
                 </template>
 
                 <Column selectionMode="multiple" style="width: 2rem" :exportable="false"></Column>
-                <Column field="code" header="Goods ID" :sortable="true" style="min-width:3rem"></Column>
-                <Column field="name" header="Name" :sortable="true" style="min-width:10rem"></Column>
+                <Column field="id" header="Goods ID" :sortable="true" style="min-width:3rem"></Column>
+                <Column field="goodsName" header="Name" :sortable="true" style="min-width:10rem"></Column>
                 <Column field="category" header="Category" :sortable="true" style="min-width:10rem"></Column>
-                <Column field="quantity" header="Quantity" :sortable="true" style="min-width:10rem">
-                    <template #body="slotProps">
-                        <span :class="'product-badge category-' + (slotProps.data.category ? slotProps.data.category.toLowerCase() : '')">{{slotProps.data.category}}</span>
-                    </template>
-                </Column>
+                <Column field="quantity" header="Quantity" :sortable="true" style="min-width:10rem"> </Column>
                
                
                 
@@ -56,34 +53,17 @@
             </div> -->
             <div class="p-field">
                 <label for="name">Name</label>
-                <InputText id="name" v-model.trim="product.name" required="true" autofocus :class="{'p-invalid': submitted && !product.name}" />
-                <small class="p-error" v-if="submitted && !product.name">Name is required.</small>
+                <InputText id="name" v-model.trim="product.goodsName" required="true" autofocus :class="{'p-invalid': submitted && !product.goodsName}" />
+                <small class="p-error" v-if="submitted && !product.goodsName">Name is required.</small>
             </div>
-            <div class="p-field p-cols-12 p-md-4">
-                <label for="description">Description</label>
-                <Textarea id="description" v-model="product.description" required="true" rows="5" cols="30" />
-            </div>
-
+        
         
 
             <div class="p-field">
-                <label class="p-mb-3">Category</label>
-                <Dropdown id="category" v-model="product.category" :options="category" optionLabel="label" placeholder="Select a Category">
-					<template #value="slotProps">
-						<div v-if="slotProps.value && slotProps.value.value">
-							<span :class="'product-badge stat-' +slotProps.value.value">{{slotProps.value.label}}</span>
-						</div>
-						<div v-else-if="slotProps.value && !slotProps.value.value">
-							<span :class="'product-badge status-' +slotProps.value.toLowerCase()">{{slotProps.value}}</span>
-						</div>
-						<span v-else>
-							{{slotProps.placeholder}}
-						</span>
-					</template>
-				</Dropdown>
-			
+                <label for="name">Category</label>
+                <InputText id="name" v-model.trim="product.category" required="true" autofocus :class="{'p-invalid': submitted && !product.category}" />
+                <small class="p-error" v-if="submitted && !product.category">Category</small>
             </div>
-
             <div class="p-formgrid p-grid">
                 <div class="p-field p-col">
                     <label for="quantity">Quantity</label>
@@ -99,7 +79,7 @@
         <Dialog v-model:visible="deleteProductDialog" :style="{width: '450px'}" header="Confirm" :modal="true">
             <div class="confirmation-content">
                 <i class="pi pi-exclamation-triangle p-mr-3" style="font-size: 2rem" />
-                <span v-if="product">Are you sure you want to delete <b>{{product.name}}</b>?</span>
+                <span v-if="product">Are you sure you want to delete <b>{{product.goodsName}}</b>?</span>
             </div>
             <template #footer>
                 <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteProductDialog = false"/>
@@ -122,21 +102,25 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import {getProducts} from '../service/ProductService';
+import {getGoods, postGoods, amendGoods, destroyGoods} from '../service/ProductService';
+
 
 export default {
     setup() {
+        
+
         onMounted(() => {
-            getProducts().then(data => products.value = data)
+           initialize()
         })
 
-        const toast = <Toast/>
+        
         const dt = ref();
         const products = ref();
         const productDialog = ref(false);
         const deleteProductDialog = ref(false);
         const deleteProductsDialog = ref(false);
         const product = ref({});
+        const index = ref();
         const selectedProducts = ref();
         const filters = ref({});
         const submitted = ref(false);
@@ -151,6 +135,10 @@ export default {
 				return value.toLocaleString('en-US', {style: 'currency', currency: 'USD'});
 			return;
         };
+
+        const initialize =()=> {
+             getGoods().then(data => products.value = data.goods)
+        }
         const openNew = () => {
             product.value = {};
             submitted.value = false;
@@ -162,39 +150,67 @@ export default {
         };
         const saveProduct = () => {
             submitted.value = true;
-
-			if (product.value.name.trim()) {
-                // if (product.value.id) {
-                //     product.value.inventoryStatus = product.value.inventoryStatus.value ? product.value.inventoryStatus.value : product.value.inventoryStatus;
-                //     products.value[findIndexById(product.value.id)] = product.value;
-                //     toast.add({severity:'success', summary: 'Successful', detail: 'Product Updated', life: 3000});
-                // }
-                // else {
-                //     product.value.id = createId();
-                //     product.value.code = createId();
-                //     product.value.image = 'product-placeholder.svg';
-                //     product.value.inventoryStatus = product.value.inventoryStatus ? product.value.inventoryStatus.value : 'LOADED';
-                //     products.value.push(product.value);
-                //     toast.add({severity:'success', summary: 'Successful', detail: 'Product Created', life: 3000});
-                // }
-
-                productDialog.value = false;
-                product.value = {};
+        const {id, goodsName, description, category, quantity} = product.value
+        console.log(id,'id')
+                if (product.value.id) {
+                    amendGoods({id, goodsName, description, category, quantity}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+                
+            }else {
+                postGoods({goodsName, description, category, quantity}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
             }
+
+              
+        
         };
         const editProduct = (prod) => {
-            product.value = {...prod};
+            console.log(prod,'prod')
+            const  {id, goodsName, description, category, quantity} = prod
+            product.value.id = id;
+            product.value.goodsName = goodsName;
+            product.value.description = description;
+            product.value.category = category;
+            product.value.quantity = quantity;
+
+        
+              
+        
             productDialog.value = true;
         };
         const confirmDeleteProduct = (prod) => {
-            product.value = prod;
+            const {id} = prod;
+            index.value = id ;
             deleteProductDialog.value = true;
-        };
+         
+         
+        }
         const deleteProduct = () => {
-            products.value = products.value.filter(val => val.id !== product.value.id);
+            
+            
+             destroyGoods(index.value).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
             deleteProductDialog.value = false;
             product.value = {};
-            toast.add({severity:'success', summary: 'Successful', detail: 'Product Deleted', life: 3000});
+           
         };
         const findIndexById = (id) => {
             let index = -1;
@@ -225,7 +241,7 @@ export default {
             products.value = products.value.filter(val => !selectedProducts.value.includes(val));
             deleteProductsDialog.value = false;
             selectedProducts.value = null;
-            toast.add({severity:'success', summary: 'Successful', detail: 'Products Deleted', life: 3000});
+        
         };
 
         return { dt, products, productDialog, deleteProductDialog, deleteProductsDialog, product, 

@@ -28,11 +28,11 @@
                 </template>
 
                 <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
-                <Column field="name" header="Name" :sortable="true" style="min-width:16rem"></Column>
+                <Column field="fullName" header="Name" :sortable="true" style="min-width:16rem"></Column>
                 <Column field="gender" header="Gender" :sortable="true" style="min-width:16rem"></Column>
-                <Column field="licenceno" header="Licenceno" :sortable="true" style="min-width:10rem">></Column>
-                <Column field="Phone-number" header="Phone No" :sortable="true" style="min-width:12rem">></column>
-                 <Column field="address" header="Address" :sortable="true" style="min-width:16rem">>
+                <Column field="licenceNo" header="Licenceno" :sortable="true" style="min-width:10rem">></Column>
+                <Column field="phoneNumber" header="Phone No" :sortable="true" style="min-width:12rem">></column>
+                 <Column field="contactAddress" header="Address" :sortable="true" style="min-width:16rem">>
                
                 
                     <!-- <template #body="slotProps">
@@ -54,9 +54,9 @@
                    
 
             <div class="name-field">
-                <label for="name">Name</label>
-                <InputText id="name" v-model.trim="product.name" required="true" autofocus :class="{'p-invalid': submitted && !product.name}" />
-                <small class="p-error" v-if="submitted && !product.name">Name is required.</small>
+                <label for="name">Full Name</label>
+                <InputText id="name" v-model.trim="product.fullName" required="true" autofocus :class="{'p-invalid': submitted && !product.fullName}" />
+                <small class="p-error" v-if="submitted && !product.fullName">Full Name is required.</small>
             </div>
             <div class="gender-field">
                 <label for="gender">Gender</label>
@@ -65,24 +65,25 @@
             </div>
             <div class="licenceno-field">
                 <label for="icenceno.">Driver Licence Number</label>
-                <InputText id="icenceno" v-model.trim="product.icenceno" required="true" autofocus :class="{'p-invalid': submitted && !product.icenceno}" />
-                <small class="p-error" v-if="submitted && !product.dogc">Licence Number is required.</small>
+                <InputText id="icenceno" v-model.trim="product.licenceNo" required="true" autofocus :class="{'p-invalid': submitted && !product.licenceNo}" />
+                <small class="p-error" v-if="submitted && !product.licenceNo">Licence Number is required.</small>
             </div>
              <div class="phone-field">
-                <label for="address.">Phone No</label>
-                <InputText id="phone" v-model.trim="product.phone" required="true" autofocus :class="{'p-invalid': submitted && !product.phone}" />
-                <small class="p-error" v-if="submitted && !product.phone">Phone number is required.</small>
+                <label for="phone.">Phone No</label>
+                <InputText id="phone" v-model.trim="product.phoneNumber" required="true" autofocus :class="{'p-invalid': submitted && !product.phoneNumber}" />
+                <small class="p-error" v-if="submitted && !product.phoneNumber">Phone number is required.</small>
+            </div>
+
+             <div class="email-field">
+                <label for="email.">Email Address</label>
+                <InputText id="phone" v-model.trim="product.email" required="true" autofocus :class="{'p-invalid': submitted && !product.email}" />
+                <small class="p-error" v-if="submitted && !product.email">Phone number is required.</small>
             </div>
            
-            <!-- <div class="status-field">
-                <label for="dogc.">Employee Status</label>
-                <InputText id="status" v-model.trim="product.status" required="true" autofocus :class="{'p-invalid': submitted && !product.status}" />
-                <small class="p-error" v-if="submitted && !product.status">Status is required.</small>
-            </div> -->
             <div class="address-field">
-                <label for="address.">Address</label>
-                <InputText id="address" v-model.trim="product.address" required="true" autofocus :class="{'p-invalid': submitted && !product.address}" />
-                <small class="p-error" v-if="submitted && !product.address">Address is required.</small>
+                <label for="address.">Contact Address</label>
+                <InputText id="address" v-model.trim="product.contactAddress" required="true" autofocus :class="{'p-invalid': submitted && !product.contactAddress}" />
+                <small class="p-error" v-if="submitted && !product.contactAddress">Contact Address is required.</small>
             </div>
            
             <template #footer>
@@ -94,7 +95,7 @@
         <Dialog v-model:visible="deleteProductDialog" :style="{width: '450px'}" header="Confirm" :modal="true">
             <div class="confirmation-content">
                 <i class="pi pi-exclamation-triangle p-mr-3" style="font-size: 2rem" />
-                <span v-if="product">Are you sure you want to delete <b>{{product.name}}</b>?</span>
+                <span v-if="product">Are you sure you want to delete <b>{{product.fullName}}</b>?</span>
             </div>
             <template #footer>
                 <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteProductDialog = false"/>
@@ -118,12 +119,12 @@
 <script>
 import { ref, onMounted } from 'vue';
 
-import {getCustomers} from '../service/ProductService';
+import {getDrivers, postDriver, amendDriver, destroyDriver} from '../service/ProductService';
 
 export default {
     setup() {
         onMounted(() => {
-            getCustomers().then(data => products.value = data);
+            initialize()
         })
 
         const toast = <Toast/>
@@ -133,6 +134,7 @@ export default {
         const deleteProductDialog = ref(false);
         const deleteProductsDialog = ref(false);
         const product = ref({});
+        const index = ref();
         const selectedProducts = ref();
         const filters = ref({});
         const submitted = ref(false);
@@ -147,6 +149,10 @@ export default {
 				return value.toLocaleString('en-US', {style: 'currency', currency: 'USD'});
 			return;
         };
+
+        const initialize =()=> {
+             getDrivers().then(data => products.value = data.drivers)
+        }
         const openNew = () => {
             product.value = {};
             submitted.value = false;
@@ -158,39 +164,52 @@ export default {
         };
         const saveProduct = () => {
             submitted.value = true;
+        const {id, fullName, gender, email, phoneNumber, contactAddress, licenceNo} = product.value
+        console.log(id,'id')
+                if (product.value.id) {
+                    amendDriver({id, fullName, gender, email, phoneNumber, contactAddress, licenceNo}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+                
+            }else {
+                postDriver({fullName, gender, email, phoneNumber, contactAddress, licenceNo}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+            }
 
-			// if (product.value.name.trim()) {
-            //     if (product.value.id) {
-            //         product.value.inventoryStatus = product.value.inventoryStatus.value ? product.value.inventoryStatus.value : product.value.inventoryStatus;
-            //         products.value[findIndexById(product.value.id)] = product.value;
-            //         toast.add({severity:'success', summary: 'Successful', detail: 'Product Updated', life: 3000});
-            //     }
-            //     else {
-            //         product.value.id = createId();
-            //         product.value.code = createId();
-            //         product.value.image = 'product-placeholder.svg';
-            //         product.value.inventoryStatus = product.value.inventoryStatus ? product.value.inventoryStatus.value : 'LABOURER';
-            //         products.value.push(product.value);
-            //         toast.add({severity:'success', summary: 'Successful', detail: 'Product Created', life: 3000});
-            //     }
-
-            //     productDialog.value = false;
-            //     product.value = {};
-            // }
+              
+        
         };
         const editProduct = (prod) => {
             product.value = {...prod};
             productDialog.value = true;
         };
         const confirmDeleteProduct = (prod) => {
-            product.value = prod;
+            const {id} = prod;
+            index.value = id ;
             deleteProductDialog.value = true;
         };
         const deleteProduct = () => {
-            products.value = products.value.filter(val => val.id !== product.value.id);
+           destroyDriver(index.value).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
             deleteProductDialog.value = false;
             product.value = {};
-            toast.add({severity:'success', summary: 'Successful', detail: 'Product Deleted', life: 3000});
         };
         const findIndexById = (id) => {
             let index = -1;

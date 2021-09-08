@@ -3,8 +3,11 @@ import 'primevue/resources/primevue.min.css'               //core css
 import 'primeicons/primeicons.css'
 import '../node_modules/primeflex/primeflex.scss'
 
+import ToastService from 'primevue/toastservice';
+
 
 import { createApp } from 'vue';
+import axios from 'axios'
 import App from './App.vue';
 import PrimeVue from 'primevue/config';
 import router from '../Router/';
@@ -28,15 +31,31 @@ import Message from 'primevue/message'
 import Steps from 'primevue/steps'
 
 
+axios.interceptors.request.use(request => {
+    console.log("Request Interceptors",request)
+    return request;
+  }, error => {
+    console.log(error)
+   return Promise.reject(error)
+  })
+  axios.interceptors.response.use(response => {
+    console.log("Response Interceptors",response)
+    return response;
+  }, error => {
+    console.log(error)
+   return Promise.reject(error)
+  })
+  
 
 
+  
 
 const app = createApp(App);
 
 app.use(PrimeVue);
 app.use(router)
-
-app.use()
+app.use(ToastService);
+app.use( axios)
 
 app.use('Textarea', Textarea)
 app.component('Steps', Steps)
