@@ -5,15 +5,14 @@
             <Toolbar class="p-mb-4">
                 <template #left>
                     <Button label="New" icon="pi pi-plus" class="p-button-success p-mr-2" @click="openNew" />
+
                     <Button label="Delete" icon="pi pi-trash" class="p-button-danger" @click="confirmDeleteSelected" :disabled="!selectedProducts || !selectedProducts.length" />
                 </template>
+                     <template #right>
+                    <Button label="Dispatch Product"  class="p-button-danger" @click="confirmDispatchProduct"/>
 
-                <template #right>
-                    <FileUpload mode="basic" accept="image/*" :maxFileSize="1000000" label="Import" chooseLabel="Import" class="p-mr-2 p-d-inline-block" />
-                    <Button label="Export" icon="pi pi-upload" class="p-button-help" @click="exportCSV($event)"  />
-                </template>
+                     </template>
             </Toolbar>
-
             <DataTable ref="dt" :value="products" v-model:selection="selectedProducts" dataKey="id" 
                 :paginator="true" :rows="10" :filters="filters"
                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown" :rowsPerPageOptions="[5,10,25]"
@@ -40,17 +39,14 @@
                     <template #body="slotProps">
                         <Button icon="pi pi-pencil" class="p-button-rounded p-button-success p-mr-2" @click="editProduct(slotProps.data)" />
                         <Button icon="pi pi-trash" class="p-button-rounded p-button-warning" @click="confirmDeleteProduct(slotProps.data)" />
+                        
                     </template>
                 </Column>
             </DataTable>
         </div>
 
         <Dialog v-model:visible="productDialog" :style="{width: '450px'}" header="Product Details" :modal="true" class="p-fluid">
-           <!-- <div class="p-field">
-                <label for="serialnumber">S/N</label>
-                <InputText id="serialnumber" v-model.trim="product.serialnumber" required="true" autofocus :class="{'p-invalid': submitted && !product.serialnumber}" />
-                <small class="p-error" v-if="submitted && !product.serialnumber">Serial Number is required.</small>
-            </div> -->
+         
             <div class="p-field">
                 <label for="name">Name</label>
                 <InputText id="name" v-model.trim="product.goodsName" required="true" autofocus :class="{'p-invalid': submitted && !product.goodsName}" />
@@ -76,17 +72,28 @@
             </template>
         </Dialog>
 
-        <Dialog v-model:visible="deleteProductDialog" :style="{width: '450px'}" header="Confirm" :modal="true">
-            <div class="confirmation-content">
-                <i class="pi pi-exclamation-triangle p-mr-3" style="font-size: 2rem" />
-                <span v-if="product">Are you sure you want to delete <b>{{product.goodsName}}</b>?</span>
+        
+      <Dialog v-model:visible="dispatchProductsDialog" :style="{width: '450px'}" header="Dispatch Product" class="p-fluid" :modal="true">
+               <div class="vehiclemodel-field">
+                <label for="productName.">Product Name</label>
+                <Dropdown inputId="productName" v-model="selectedGoods" :options="products" optionLabel="goodsName" placeholder="Select Goods " />
+                <small class="p-error" v-if="submitted && !product.goodsName">Product Name is required.</small>
+            </div>
+            <div class="quantity-field">
+                <label for="quantity">Quantity</label>
+                <InputNumber id="quantity" v-model="quantity" required="true" autofocus :class="{'p-invalid': submitted && !quantity}" />
+                <small class="p-error" v-if="submitted && !quantity">Quantity is required.</small>
+            </div>
+            <div class="drivername-field">
+                <label for="driverlicence.">Driver's Name'</label>
+                <Dropdown inputId="driverName"  v-model="selectedDriver" :options="drivers" optionLabel="fullName" placeholder="Select Driver " />
+                <small class="p-error" v-if="submitted && !drivers.fullName">Driver Name is required.</small>
             </div>
             <template #footer>
-                <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteProductDialog = false"/>
-                <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteProduct" />
+                <Button label="No" icon="pi pi-times" class="p-button-text" @click="dispatchProductsDialog = false"/>
+                <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="dispatch" />
             </template>
         </Dialog>
-
         <Dialog v-model:visible="deleteProductsDialog" :style="{width: '450px'}" header="Confirm" :modal="true">
             <div class="confirmation-content">
                 <i class="pi pi-exclamation-triangle p-mr-3" style="font-size: 2rem" />
@@ -94,7 +101,7 @@
             </div>
             <template #footer>
                 <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteProductsDialog = false"/>
-                <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteSelectedProducts" />
+                <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteProduct" />
             </template>
         </Dialog>
 	</div>
@@ -102,25 +109,32 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import {getGoods, postGoods, amendGoods, destroyGoods} from '../service/ProductService';
+import {getGoods, postGoods, amendGoods, destroyGoods, getDrivers, dispatchGoods} from '../service/ProductService';
 
 
 export default {
     setup() {
-        
-
         onMounted(() => {
            initialize()
         })
 
         
         const dt = ref();
+        const drivers = ref();
         const products = ref();
         const productDialog = ref(false);
         const deleteProductDialog = ref(false);
         const deleteProductsDialog = ref(false);
+        const dispatchProductsDialog = ref(false);
+        const dispatchProduct = ref({
+            driverId: '',
+            id: ''
+        })
+        const index = ref()
+        const selectedGoods = ref(null)
+        const selectedDriver = ref(null);
+        const quantity = ref(null)
         const product = ref({});
-        const index = ref();
         const selectedProducts = ref();
         const filters = ref({});
         const submitted = ref(false);
@@ -135,9 +149,11 @@ export default {
 				return value.toLocaleString('en-US', {style: 'currency', currency: 'USD'});
 			return;
         };
+        
 
         const initialize =()=> {
              getGoods().then(data => products.value = data.goods)
+              getDrivers().then(data => drivers.value = data.drivers)
         }
         const openNew = () => {
             product.value = {};
@@ -176,8 +192,10 @@ export default {
               
         
         };
+
+        
         const editProduct = (prod) => {
-            console.log(prod,'prod')
+           
             const  {id, goodsName, description, category, quantity} = prod
             product.value.id = id;
             product.value.goodsName = goodsName;
@@ -193,10 +211,38 @@ export default {
         const confirmDeleteProduct = (prod) => {
             const {id} = prod;
             index.value = id ;
-            deleteProductDialog.value = true;
+            console.log(id,'index.value')
+            
+            deleteProductsDialog.value = true;
          
          
         }
+console.log(selectedDriver,'selectedDriver')
+        const confirmDispatchProduct = (prod) => {
+            const {id} = prod;
+            index.value = id ;
+            dispatchProductsDialog.value = true;
+            console.log(prod,'hello')
+            
+         
+         
+        }
+        const dispatchProductHandler =(prod)=>{
+            console.log(prod,'prod')
+        }
+
+        const dispatch =()=> {
+            console.log(quantity.value,'tttt')
+             dispatchGoods({quantity: quantity.value,  driverId: selectedDriver.value.id, id: selectedGoods.value.id}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+        }
+        
         const deleteProduct = () => {
             
             
@@ -212,6 +258,8 @@ export default {
             product.value = {};
            
         };
+
+        console.log(dispatchProduct.driverId,'driverId')
         const findIndexById = (id) => {
             let index = -1;
             for (let i = 0; i < products.value.length; i++) {
@@ -237,16 +285,25 @@ export default {
         const confirmDeleteSelected = () => {
             deleteProductsDialog.value = true;
         };
+        const confirmDispatchSelected = () => {
+            dispatchProductsDialog.value = true;
+        };
         const deleteSelectedProducts = () => {
             products.value = products.value.filter(val => !selectedProducts.value.includes(val));
             deleteProductsDialog.value = false;
             selectedProducts.value = null;
         
         };
+        const dispatchSelectedProducts = () => {
+            products.value = products.value.filter(val => !selectedProducts.value.includes(val));
+            dispatchProductsDialog.value = false;
+            selectedProducts.value = null;
+        
+        };
 
-        return { dt, products, productDialog, deleteProductDialog, deleteProductsDialog, product, 
-            selectedProducts, filters, submitted, statuses, formatCurrency, openNew, hideDialog, saveProduct, editProduct,
-            confirmDeleteProduct, deleteProduct, findIndexById, createId, exportCSV, confirmDeleteSelected, deleteSelectedProducts}
+        return { dt, products, drivers,dispatchSelectedProducts, selectedDriver, dispatch, selectedGoods, productDialog,dispatchProduct,dispatchProductHandler, deleteProductDialog,dispatchProductsDialog, deleteProductsDialog, product, confirmDispatchSelected,
+            selectedProducts, filters, submitted, statuses, formatCurrency, openNew, hideDialog, saveProduct, editProduct,confirmDispatchProduct,
+            confirmDeleteProduct, deleteProduct, findIndexById, createId, exportCSV,quantity, confirmDeleteSelected, deleteSelectedProducts}
     }
 }
 </script>

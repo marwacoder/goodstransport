@@ -28,15 +28,12 @@
                 </template>
 
                 <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
-                <Column field="name" header="Name" :sortable="true" style="min-width:16rem"></Column>
+                <Column field="employeeName" header="Name" :sortable="true" style="min-width:16rem"></Column>
                 <Column field="gender" header="Gender" :sortable="true" style="min-width:16rem"></Column>
-                <Column field="category" header="Category" :sortable="true" style="min-width:10rem">></Column>
+                <Column field="employeeType" header="Category" :sortable="true" style="min-width:10rem">></Column>
                 <Column field="email" header="E-mail" :sortable="true" style="min-width:10rem">></Column>
-                <Column field="Phone-number" header="Phone No" :sortable="true" style="min-width:12rem">></column>
-                 <Column field="address" header="Address" :sortable="true" style="min-width:16rem">>
-               
-                </Column>
-               
+                <Column field="phoneNumber" header="Phone No" :sortable="true" style="min-width:12rem">></column>
+                
                 <Column :exportable="false">
                     <template #body="slotProps">
                         <Button icon="pi pi-pencil" class="p-button-rounded p-button-success p-mr-2" @click="editProduct(slotProps.data)" />
@@ -51,9 +48,9 @@
                    
 
             <div class="name-field">
-                <label for="name">Name</label>
-                <InputText id="name" v-model.trim="product.name" required="true" autofocus :class="{'p-invalid': submitted && !product.name}" />
-                <small class="p-error" v-if="submitted && !product.name">Name is required.</small>
+                <label for="name">Employee Name</label>
+                <InputText id="name" v-model.trim="product.employeeName" required="true" autofocus :class="{'p-invalid': submitted && !product.employeeName}" />
+                <small class="p-error" v-if="submitted && !product.employeeName">Name is required.</small>
             </div>
             <div class="gender-field">
                 <label for="gender">Gender</label>
@@ -62,8 +59,8 @@
             </div>
             <div class="category-field">
                 <label for="category.">Categories of Employees</label>
-                <InputText id="category" v-model.trim="product.category" required="true" autofocus :class="{'p-invalid': submitted && !product.category}" />
-                <small class="p-error" v-if="submitted && !product.category">Category is required.</small>
+                <InputText id="category" v-model.trim="product.employeeType" required="true" autofocus :class="{'p-invalid': submitted && !product.employeeType}" />
+                <small class="p-error" v-if="submitted && !product.employeeType">Category is required.</small>
             </div>
             <div class="email-field">
                 <label for="email.">E-mail</label>
@@ -72,13 +69,8 @@
             </div>
              <div class="phone-field">
                 <label for="address.">Phone No</label>
-                <InputText id="phone" v-model.trim="product.phone" required="true" autofocus :class="{'p-invalid': submitted && !product.phone}" />
-                <small class="p-error" v-if="submitted && !product.phone">Phone number is required.</small>
-            </div>
-            <div class="address-field">
-                <label for="address.">Address</label>
-                <InputText id="address" v-model.trim="product.address" required="true" autofocus :class="{'p-invalid': submitted && !product.address}" />
-                <small class="p-error" v-if="submitted && !product.address">Address is required.</small>
+                <InputText id="phone" v-model.trim="product.phoneNumber" required="true" autofocus :class="{'p-invalid': submitted && !product.phoneNumber}" />
+                <small class="p-error" v-if="submitted && !product.phoneNumber">Phone number is required.</small>
             </div>
            
             <template #footer>
@@ -105,7 +97,7 @@
             </div>
             <template #footer>
                 <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteProductsDialog = false"/>
-                <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteSelectedProducts" />
+                <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteProduct" />
             </template>
         </Dialog>
 	</div>
@@ -114,12 +106,12 @@
 <script>
 import { ref, onMounted } from 'vue';
 
-import {getCustomers} from '../service/ProductService';
+import { getEmployees, postEmployee, amendEmployee, destroyEmployee} from '../service/ProductService';
 
 export default {
     setup() {
         onMounted(() => {
-            getCustomers().then(data => products.value = data);
+           initialize()
         })
 
         const toast = <Toast/>
@@ -130,6 +122,7 @@ export default {
         const deleteProductsDialog = ref(false);
         const product = ref({});
         const selectedProducts = ref();
+        const index = ref()
         const filters = ref({});
         const submitted = ref(false);
         const statuses = ref([
@@ -143,6 +136,11 @@ export default {
 				return value.toLocaleString('en-US', {style: 'currency', currency: 'USD'});
 			return;
         };
+
+        const initialize =()=> {
+             getEmployees().then(data => products.value = data.employees)
+              
+        }
         const openNew = () => {
             product.value = {};
             submitted.value = false;
@@ -154,39 +152,59 @@ export default {
         };
         const saveProduct = () => {
             submitted.value = true;
+        const {id, employeeName, gender, email, phoneNumber, employeeType} = product.value
+        console.log(id,'id')
+                if (product.value.id) {
+                    amendEmployee({id, employeeName, gender, email, phoneNumber, employeeType}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+                
+            }else {
+                postEmployee({employeeName, gender, email, phoneNumber, employeeType}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+            }
 
-			// if (product.value.name.trim()) {
-            //     if (product.value.id) {
-            //         product.value.inventoryStatus = product.value.inventoryStatus.value ? product.value.inventoryStatus.value : product.value.inventoryStatus;
-            //         products.value[findIndexById(product.value.id)] = product.value;
-            //         toast.add({severity:'success', summary: 'Successful', detail: 'Product Updated', life: 3000});
-            //     }
-            //     else {
-            //         product.value.id = createId();
-            //         product.value.code = createId();
-            //         product.value.image = 'product-placeholder.svg';
-            //         product.value.inventoryStatus = product.value.inventoryStatus ? product.value.inventoryStatus.value : 'LABOURER';
-            //         products.value.push(product.value);
-            //         toast.add({severity:'success', summary: 'Successful', detail: 'Product Created', life: 3000});
-            //     }
-
-            //     productDialog.value = false;
-            //     product.value = {};
-            // }
+              
+        
         };
+
         const editProduct = (prod) => {
             product.value = {...prod};
             productDialog.value = true;
         };
         const confirmDeleteProduct = (prod) => {
-            product.value = prod;
-            deleteProductDialog.value = true;
-        };
-        const deleteProduct = () => {
-            products.value = products.value.filter(val => val.id !== product.value.id);
-            deleteProductDialog.value = false;
+            const {id} = prod;
+            index.value = id ;
+            console.log(id,'index.value')
+            
+            deleteProductsDialog.value = true;
+         
+         
+        }
+         const deleteProduct = () => {
+            
+             destroyEmployee({id: index.value}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+             deleteProductsDialog.value = false;
             product.value = {};
-            toast.add({severity:'success', summary: 'Successful', detail: 'Product Deleted', life: 3000});
+           
         };
         const findIndexById = (id) => {
             let index = -1;
@@ -220,7 +238,7 @@ export default {
             toast.add({severity:'success', summary: 'Successful', detail: 'Products Deleted', life: 3000});
         };
 
-        return { dt, products, productDialog, deleteProductDialog, deleteProductsDialog, product, 
+        return { dt, products, productDialog, deleteProductDialog, deleteProductsDialog, product, deleteProduct,
             selectedProducts, filters, submitted, statuses, formatCurrency, openNew, hideDialog, saveProduct, editProduct,
             confirmDeleteProduct, deleteProduct, findIndexById, createId, exportCSV, confirmDeleteSelected, deleteSelectedProducts}
     }

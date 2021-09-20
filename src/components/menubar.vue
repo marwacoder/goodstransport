@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div v-if="isLoggedIn = true">
         <Menubar :model="items">
             <template #start>
             </template>
@@ -16,6 +16,8 @@ import { ref } from 'vue';
 export default {
     name: 'MenuBar',
      setup() {
+         const isLoggedIn = localStorage.getItem('role') ? true : false
+
         const items = ref([
             {   
                label:'Home',
@@ -24,10 +26,23 @@ export default {
                
             },
             {
-                label:'Manage Goods',
-                 to: '/goods'
-            
-               
+               label:'Manage Goods',
+              
+            //    to:'/profile'
+               items:[
+                    {
+                        label:'Add Goods',
+                        to: '/goods'
+                    },
+                    
+                    {
+                        separator:true
+                    },
+                    {
+                        label:'Dispatch Goods',
+                        to:'/dispatch'
+                    }
+               ]
             },
             {
                 label:'Vehicle',
@@ -84,7 +99,7 @@ export default {
             
         ]);
 
-        return { items }
+        return { items, isLoggedIn }
     }
 }
 </script>

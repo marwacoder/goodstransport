@@ -63,8 +63,66 @@ import axios from 'axios';
             .then(data => data.data);
     }
 
-    export const   getCustomers =()=> {
-        return axios.get('http://localhost:5000/data')
+    
+
+    export const   dispatchGoods =({quantity,  driverId, id})=> {
+        return axios.post(`http://localhost:8000/logistics/dispatch`,{quantity,  driverId, id})
+            .then(data => data.data);
+    }
+    export const   getDispatchGoods =()=> {
+        return axios.get(`http://localhost:8000/logistics/dispatch`)
             .then(data => data.data);
     }
 
+    export const   destroyDispatchGoods =({id})=> {
+        return axios.post(`http://localhost:8000/logistics/dispatch/destroy/${id}`)
+            .then(data => data.data);
+    }
+
+    export const   postEmployee =({employeeName, gender, email, phoneNumber, employeeType})=> {
+        return axios.post(`http://localhost:8000/logistics/employee`,{employeeName, gender, email, phoneNumber, employeeType})
+            .then(data => data.data);
+    }
+
+    export const   amendEmployee =({id, employeeName, gender, email, phoneNumber, employeeType})=> {
+        return axios.post(`http://localhost:8000/logistics/employee/amend/${id}`,{employeeName, gender, email, phoneNumber, employeeType})
+            .then(data => data.data);
+    }
+
+    export const   getEmployees =()=> {
+        return axios.get(`http://localhost:8000/logistics/employee`)
+            .then(data => data.data);
+    }
+
+    export const   destroyEmployee =({id})=> {
+        return axios.post(`http://localhost:8000/logistics/employee/destroy/${id}`)
+            .then(data => data.data);
+    }
+
+    export const   getCustomers =()=> {
+        return axios.get('http://localhost:8000/logistics/customer')
+            .then(data => data.data);
+    }
+
+
+    export const   postCustomer =({fullName, gender, email, phoneNumber, driverId, goodsId, vehicleId})=> {
+        return axios.post(`http://localhost:8000/logistics/customer`,{fullName, gender, email, phoneNumber, driverId, goodsId, vehicleId})
+            .then(data => data.data);
+    }
+
+    export const   amendCustomer =({id, fullName, gender, email, phoneNumber})=> {
+        return axios.post(`http://localhost:8000/logistics/customer/amend/${id}`,{fullName, gender, email, phoneNumber})
+            .then(data => data.data);
+    }
+
+    export const   destroyCustomer =({id})=> {
+        return axios.post(`http://localhost:8000/logistics/customer/destroy/${id}`)
+            .then(data => data.data);
+    }
+
+    export const   authentication =({username, password})=> {
+        return axios.post(`http://localhost:8000/logistics/login/action/`,{username, password})
+            .then(data => data.data);
+    }
+
+    

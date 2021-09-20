@@ -9,6 +9,7 @@ import Locations from '../Views/Location'
 import Profile from '../Views/Profile.vue'
 import Account from '../Views/Account.vue'
 import Customer from "../Views/Customer"
+import DispatchGoods from "../Views/DispatchGoods"
 
 const routes = [
   {
@@ -55,6 +56,11 @@ const routes = [
       path: '/customer',
     name: 'Customer',
     component: Customer  
+    },
+    {
+      path: '/dispatch',
+    name: 'DispatchGoods',
+    component: DispatchGoods  
     }
 ]
 

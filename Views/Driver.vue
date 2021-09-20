@@ -197,8 +197,12 @@ export default {
         const confirmDeleteProduct = (prod) => {
             const {id} = prod;
             index.value = id ;
-            deleteProductDialog.value = true;
-        };
+            console.log(id,'index.value')
+            
+            deleteProductsDialog.value = true;
+         
+         
+        }
         const deleteProduct = () => {
            destroyDriver(index.value).then(data =>{ 
             console.log(data)

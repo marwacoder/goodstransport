@@ -9,6 +9,7 @@
 <script>
 
 import MenuBar from './components/menubar'
+import Welcome from '../Views/Dashboard.vue'
 
 
 

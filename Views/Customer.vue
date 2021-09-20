@@ -28,17 +28,19 @@
                     </div>
                 </template>
 
-                <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
-                <Column field="name" header="Name" :sortable="true" style="min-width:16rem"></Column>
-                <Column field="gender" header="Gender" :sortable="true" style="min-width:16rem"></Column>
-                <Column field="customer-goods-status" header="Customer Goods Status" :sortable="true" style="min-width:10rem">></Column>
-                <Column field="Phone-number" header="Phone No" :sortable="true" style="min-width:12rem">></column>
-                 <Column field="address" header="Address" :sortable="true" style="min-width:16rem">>
-               
                 
-                    <!-- <template #body="slotProps">
-                        <span :class="'employee-phone no-' + (slotProps.data.phone-number ? slotProps.data.phone-no.toLowerCase() : '')">{{slotProps.data.phone-no}}</span>
-                    </template> -->
+                <Column field="fullName" header="Name" :sortable="true" style="min-width:8rem"></Column>
+                <Column field="gender" header="Gender" :sortable="true" style="min-width:2rem"></Column>
+                <Column field="phoneNumber" header="Phone Number" :sortable="true" style="min-width:6rem">></Column>
+                <Column field="email" header="Email Address" :sortable="true" style="min-width:6rem">></column>
+                 <Column field="goods.goodsName" header="Goods Name" :sortable="true" style="min-width:8rem">></Column>
+                 <Column field="goods.quantity" header="Quantity" :sortable="true" style="min-width:5rem">>
+                </Column>
+                <Column field="goods.status" header="Status" :sortable="true" style="min-width:5rem">>
+                </Column>
+                <Column field="drivers.fullName" header="Driver's Name" :sortable="true" style="min-width:5rem">>
+                </Column>
+                <Column field="vehicles.platNumber" header="Plate No" :sortable="true" style="min-width:5rem">>
                 </Column>
                
                 <Column :exportable="false">
@@ -56,34 +58,40 @@
 
             <div class="name-field">
                 <label for="name">Name</label>
-                <InputText id="name" v-model.trim="product.name" required="true" autofocus :class="{'p-invalid': submitted && !product.name}" />
-                <small class="p-error" v-if="submitted && !product.name">Name is required.</small>
+                <InputText id="name" v-model.trim="product.fullName" required="true" autofocus :class="{'p-invalid': submitted && !product.fullName}" />
+                <small class="p-error" v-if="submitted && !product.fullName">Name is required.</small>
             </div>
             <div class="gender-field">
                 <label for="gender">Gender</label>
                 <InputText id="gender" v-model.trim="product.gender" required="true" autofocus :class="{'p-invalid': submitted && !product.gender}" />
                 <small class="p-error" v-if="submitted && !product.gender">Gender is required.</small>
             </div>
-            <div class="cgs-field">
-                <label for="cgs.">Customer Goods Status</label>
-                <InputText id="cgs" v-model.trim="product.cgs" required="true" autofocus :class="{'p-invalid': submitted && !product.cgs}" />
-                <small class="p-error" v-if="submitted && !product.cgs">Customer goods status is required.</small>
+           <div class="phone-field">
+                <label for="address.">Email Address</label>
+                <InputText id="phone" v-model.trim="product.email" required="true" autofocus :class="{'p-invalid': submitted && !product.email}" />
+                <small class="p-error" v-if="submitted && !product.email">Phone number is required.</small>
             </div>
              <div class="phone-field">
                 <label for="address.">Phone No</label>
-                <InputText id="phone" v-model.trim="product.phone" required="true" autofocus :class="{'p-invalid': submitted && !product.phone}" />
-                <small class="p-error" v-if="submitted && !product.phone">Phone number is required.</small>
+                <InputText id="phone" v-model.trim="product.phoneNumber" required="true" autofocus :class="{'p-invalid': submitted && !product.phoneNumber}" />
+                <small class="p-error" v-if="submitted && !product.phoneNumber">Phone number is required.</small>
             </div>
            
-            <!-- <div class="status-field">
-                <label for="dogc.">Employee Status</label>
-                <InputText id="status" v-model.trim="product.status" required="true" autofocus :class="{'p-invalid': submitted && !product.status}" />
-                <small class="p-error" v-if="submitted && !product.status">Status is required.</small>
-            </div> -->
-            <div class="address-field">
-                <label for="address.">Address</label>
-                <InputText id="address" v-model.trim="product.address" required="true" autofocus :class="{'p-invalid': submitted && !product.address}" />
-                <small class="p-error" v-if="submitted && !product.address">Address is required.</small>
+          
+            <div class="drivername-field">
+                <label for="driverlicence.">Driver's Name'</label>
+                <Dropdown inputId="driverName"  v-model="selectedDriver" :options="drivers" optionLabel="fullName" placeholder="Select Driver " />
+                <small class="p-error" v-if="submitted && !selectedDriver">Driver Name is required.</small>
+            </div>
+            <div class="platNumber-field">
+                <label for="platNumber.">Vehicle Plate Number'</label>
+                <Dropdown inputId="platNumber"  v-model="selectedVehicle" :options="vehicles" optionLabel="platNumber" placeholder="Select Vehicle " />
+                <small class="p-error" v-if="submitted && !selectedVehicle">Driver Name is required.</small>
+            </div>
+            <div class="goodsName-field">
+                <label for="goodsName">Goods ID</label>
+                <Dropdown inputId="goodsName"  v-model="selectedGood" :options="goods" optionLabel="goodsName" placeholder="Select Goods " />
+                <small class="p-error" v-if="submitted ">Driver Name is required.</small>
             </div>
            
             <template #footer>
@@ -119,21 +127,28 @@
 <script>
 import { ref, onMounted } from 'vue';
 
-import {getCustomers} from '../service/ProductService';
+import {getCustomers, postCustomer, amendCustomer, getGoods, getDrivers, getVehicles, destroyCustomer} from '../service/ProductService';
 
 export default {
     setup() {
         onMounted(() => {
-            getCustomers().then(data => products.value = data);
+            initialize()
         })
 
         const toast = <Toast/>
         const dt = ref();
+        const drivers = ref()
+        const vehicles = ref()
+        const goods = ref()
         const products = ref();
+        const selectedDriver = ref(null)
+        const selectedVehicle = ref(null)
+        const selectedGood = ref(null)
         const productDialog = ref(false);
         const deleteProductDialog = ref(false);
         const deleteProductsDialog = ref(false);
         const product = ref({});
+        const index = ref()
         const selectedProducts = ref();
         const filters = ref({});
         const submitted = ref(false);
@@ -142,6 +157,13 @@ export default {
 	     	{label: 'LOWSTOCK', value: 'lowstock'},
 	     	{label: 'OUTOFSTOCK', value: 'outofstock'}
         ]);
+
+        const initialize = () => {
+             getCustomers().then(data => products.value = data.customers);
+            getDrivers().then(data => drivers.value = data.drivers);
+            getVehicles().then(data => vehicles.value = data.vehicles);
+            getGoods().then(data => goods.value = data.goods);
+        }
 
         const formatCurrency = (value) => {
             if(value)
@@ -152,6 +174,7 @@ export default {
             product.value = {};
             submitted.value = false;
             productDialog.value = true;
+            console.log(vehicles.value, 'goods')
         };
         const hideDialog = () => {
             productDialog.value = false;
@@ -159,39 +182,59 @@ export default {
         };
         const saveProduct = () => {
             submitted.value = true;
+         const {id, fullName, gender, email, phoneNumber} = product.value
+         console.log(id,'id')
+                if (product.value.id) {
+                    amendCustomer({
+                        id, fullName, gender, email,
+                        email, phoneNumber}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+                
+            }else {
+                postCustomer({fullName, gender, email, phoneNumber, driverId: selectedDriver.value.id, 
+                        goodsId: selectedGood.value.id, vehicleId: selectedVehicle.value.id}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
+            }
 
-			// if (product.value.name.trim()) {
-            //     if (product.value.id) {
-            //         product.value.inventoryStatus = product.value.inventoryStatus.value ? product.value.inventoryStatus.value : product.value.inventoryStatus;
-            //         products.value[findIndexById(product.value.id)] = product.value;
-            //         toast.add({severity:'success', summary: 'Successful', detail: 'Product Updated', life: 3000});
-            //     }
-            //     else {
-            //         product.value.id = createId();
-            //         product.value.code = createId();
-            //         product.value.image = 'product-placeholder.svg';
-            //         product.value.inventoryStatus = product.value.inventoryStatus ? product.value.inventoryStatus.value : 'LABOURER';
-            //         products.value.push(product.value);
-            //         toast.add({severity:'success', summary: 'Successful', detail: 'Product Created', life: 3000});
-            //     }
-
-            //     productDialog.value = false;
-            //     product.value = {};
-            // }
+              
+        
         };
         const editProduct = (prod) => {
             product.value = {...prod};
             productDialog.value = true;
         };
         const confirmDeleteProduct = (prod) => {
-            product.value = prod;
+            const {id} = prod;
+            index.value = id ;
+            console.log(id,'index.value')
+            
             deleteProductDialog.value = true;
-        };
+         
+         
+        }
         const deleteProduct = () => {
-            products.value = products.value.filter(val => val.id !== product.value.id);
+           destroyCustomer({id: index.value}).then(data =>{ 
+            console.log(data)
+        initialize()
+        
+        }).catch((error)=> {
+    
+            console.log(error)
+        })
             deleteProductDialog.value = false;
             product.value = {};
-            toast.add({severity:'success', summary: 'Successful', detail: 'Product Deleted', life: 3000});
         };
         const findIndexById = (id) => {
             let index = -1;
@@ -225,7 +268,7 @@ export default {
             toast.add({severity:'success', summary: 'Successful', detail: 'Products Deleted', life: 3000});
         };
 
-        return { dt, products, productDialog, deleteProductDialog, deleteProductsDialog, product, 
+        return { dt, products, productDialog, deleteProductDialog, deleteProductsDialog, product, drivers, vehicles, goods, selectedDriver, selectedVehicle, selectedGood,
             selectedProducts, filters, submitted, statuses, formatCurrency, openNew, hideDialog, saveProduct, editProduct,
             confirmDeleteProduct, deleteProduct, findIndexById, createId, exportCSV, confirmDeleteSelected, deleteSelectedProducts}
     }
